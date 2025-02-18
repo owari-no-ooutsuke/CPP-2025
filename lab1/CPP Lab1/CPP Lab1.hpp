@@ -16,3 +16,6 @@ typedef struct {
 
 //вычисление дискриминанта
 double Discriminant(quadEq const& eq);
+
+//нахождение корней
+eqSolution Solution(quadEq const& eq);
