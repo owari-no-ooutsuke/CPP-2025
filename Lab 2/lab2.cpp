@@ -4,18 +4,22 @@
 #include <string>
 #include <vector>
 #define P_CORRECT 60
-#define N 10
 
 using std::string;
 using std::vector;
 using std::ifstream;
 
+//квадратное уравнение ax^2 + bx + c
 class Equation {
 public:
 	double a, b, c;
 	bool isValid();
 };
 
+/* проверка корректности уравнени€
+* 
+* возвращает false, если все коэффициенты уравнени€ нулевые, и true во всех остальных случа€х
+*/
 bool Equation::isValid() {
 	if (a == 0 && b == 0 && c == 0) {
 		return false;
@@ -25,16 +29,18 @@ bool Equation::isValid() {
 	}
 }
 
+//ответ студента
 class Answer {
 public:
-	string studName;
-	vector<vector<double>> solutions;
+	string studName; //‘»ќ студента
+	vector<vector<double>> solutions; //корни уравнений
 };
 
+//человек - содержит методы чтени€ и решени€ квадратных уравнений
 class Person {
 protected:
-	Equation ReadEq(ifstream& fin);
-	vector<double> EqSolution(Equation& eq);
+	Equation ReadEq(ifstream& fin); //чтение уравнени€ из файла
+	vector<double> EqSolution(Equation& eq); //решени€ квадратного уравнени€ (правильное)
 };
 
 Equation Person::ReadEq(ifstream& fin) {
@@ -71,19 +77,22 @@ vector<double> Person::EqSolution(Equation& eq) {
 	return sol;
 }
 
+//студент 
 class Student : public Person {
 public:
-	string name;
-	virtual Answer Solve(string taskFilename) = 0;
+	string name; //‘»ќ студента
+	virtual Answer Solve(string taskFilename) = 0; //решение квадратных уравнений из файла
 	virtual ~Student() {};
 };
 
+//хороший студент
 class Good : public Student {
 public:
 	Good(string studName) { name = studName; };
-	Answer Solve(string taskFilename);
+	Answer Solve(string taskFilename); //решение квадратных уравнений из файла
 };
 
+//решение уравнений из файла хорошим студентом - всегда решает правильно
 Answer Good::Solve(string taskFilename) {
 	Answer ans;
 	ans.studName = name;
@@ -99,12 +108,18 @@ Answer Good::Solve(string taskFilename) {
 	return ans;
 }
 
+//средний студент
 class Average : public Student {
 public:
 	Average(string studName) { name = studName; };
-	Answer Solve(string taskFilename);
+	Answer Solve(string taskFilename); //решение квадратных уравнений из файла
 };
 
+/* решение уравнений из файла средним студентом
+* 
+* с веро€тностью P_CORRECT (в процентах) решает правильно, в остальных случа€х записывает
+* один корень, равный 0
+*/
 Answer Average::Solve(string taskFilename) {
 	srand(time(NULL));
 	Answer ans;
@@ -128,12 +143,17 @@ Answer Average::Solve(string taskFilename) {
 	return ans;
 }
 
+//плохой студент
 class Bad : public Student {
 public:
 	Bad(string studName) { name = studName; };
-	Answer Solve(string taskFilename);
+	Answer Solve(string taskFilename); //решение квадратных уравнений из файла
 };
 
+/* решение уравнений из файла плохим студентом 
+* 
+* всегда один корень, равный 0
+*/
 Answer Bad::Solve(string taskFilename) {
 	Answer ans;
 	ans.studName = name;
@@ -147,4 +167,69 @@ Answer Bad::Solve(string taskFilename) {
 	}
 	fin.close();
 	return ans;
+}
+
+//результат проверки работы студента преподавателем
+class Result {
+public:
+	string studName; //‘»ќ студента
+	int correctAnsCount; //количество правильных ответов
+};
+
+//преподаватель
+class Teacher : public Person {
+private:
+	vector<Answer> queue; //очередь из работ студентов
+	vector<Result> res; //результаты проверки
+	vector<vector<double>> Solve(string taskFilename); //решени€ квадратных уравений (правильное)
+public:
+	void AddToQueue(Answer ans); //добавить работу в очередь
+	void ClearQueue(); //очистить очередь
+	void Check(string taskFilename); //проверка работ, наход€щихс€ в очереди
+	void ShowResults(); //вывод результатов проверки
+}; 
+
+vector<vector<double>> Teacher::Solve(string taskFilename) {
+	vector<vector<double>> answers;
+	ifstream fin(taskFilename);
+	Equation eq = ReadEq(fin);
+	while (eq.isValid()) {
+		vector<double> sol = EqSolution(eq);
+		answers.push_back(sol);
+		eq = ReadEq(fin);
+	}
+	fin.close();
+	return answers;
+}
+
+void Teacher::AddToQueue(Answer ans) {
+	queue.push_back(ans);
+}
+
+void Teacher::ClearQueue() {
+	queue.clear();
+}
+
+void Teacher::Check(string taskFilename) {
+	res.clear();
+	vector<vector<double>> answers = Solve(taskFilename);
+
+	for (int i = 0; i < queue.size(); i++) {
+		Result studRes;
+		studRes.studName = queue[i].studName;
+		int correctCount = 0;
+		for (int j = 0; j < answers.size(); j++) {
+			if (queue[i].solutions[j] == answers[j]) {
+				correctCount++;
+			}
+		}
+		studRes.correctAnsCount = correctCount;
+		res.push_back(studRes);
+	}
+}
+
+void Teacher::ShowResults() {
+	for (int i = 0; i < res.size(); i++) {
+		std::cout << res[i].studName << ": " << res[i].correctAnsCount << std::endl;
+	}
 }
