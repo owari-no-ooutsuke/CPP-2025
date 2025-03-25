@@ -3,6 +3,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#define P_CORRECT 60
+#define N 10
 
 using std::string;
 using std::vector;
@@ -67,4 +69,82 @@ vector<double> Person::EqSolution(Equation& eq) {
 	}
 
 	return sol;
+}
+
+class Student : public Person {
+public:
+	string name;
+	virtual Answer Solve(string taskFilename) = 0;
+	virtual ~Student() {};
+};
+
+class Good : public Student {
+public:
+	Good(string studName) { name = studName; };
+	Answer Solve(string taskFilename);
+};
+
+Answer Good::Solve(string taskFilename) {
+	Answer ans;
+	ans.studName = name;
+
+	ifstream fin(taskFilename);
+	Equation eq = ReadEq(fin);
+	while (eq.isValid()) {
+		vector<double> sol = EqSolution(eq);
+		ans.solutions.push_back(sol);
+		eq = ReadEq(fin);
+	}
+	fin.close();
+	return ans;
+}
+
+class Average : public Student {
+public:
+	Average(string studName) { name = studName; };
+	Answer Solve(string taskFilename);
+};
+
+Answer Average::Solve(string taskFilename) {
+	srand(time(NULL));
+	Answer ans;
+	ans.studName = name;
+
+	ifstream fin(taskFilename);
+	Equation eq = ReadEq(fin);
+	while (eq.isValid()) {
+		int randNum = rand() % 100 + 1;
+		vector<double> sol;
+		if (randNum <= P_CORRECT) {
+			sol = EqSolution(eq);
+		}
+		else {
+			sol.push_back(0);
+		}
+		ans.solutions.push_back(sol);
+		eq = ReadEq(fin);
+	}
+	fin.close();
+	return ans;
+}
+
+class Bad : public Student {
+public:
+	Bad(string studName) { name = studName; };
+	Answer Solve(string taskFilename);
+};
+
+Answer Bad::Solve(string taskFilename) {
+	Answer ans;
+	ans.studName = name;
+
+	ifstream fin(taskFilename);
+	Equation eq = ReadEq(fin);
+	while (eq.isValid()) {
+		vector<double> sol = { 0 };
+		ans.solutions.push_back(sol);
+		eq = ReadEq(fin);
+	}
+	fin.close();
+	return ans;
 }
