@@ -3,7 +3,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#define P_CORRECT 60
+#define P_CORRECT 60 //вероятность правильного решения среднего студента (в процентах)
+#define N 10 //количество студентов
 
 using std::string;
 using std::vector;
@@ -232,4 +233,27 @@ void Teacher::ShowResults() {
 	for (int i = 0; i < res.size(); i++) {
 		std::cout << res[i].studName << ": " << res[i].correctAnsCount << std::endl;
 	}
+}
+
+/* создание студентов
+* 
+* возвращает массив указателей на базовый класс Student
+*/
+vector<Student*> CreateStudents(int count) {
+	vector<Student*> students;
+	srand(time(NULL));
+	for (int i = 0; i < count; i++) {
+		string name = "Student" + std::to_string(i);
+		int randNum = rand() % 3;
+		if (randNum == 0) {
+			students.push_back(new Good(name));
+		}
+		else if (randNum == 1) {
+			students.push_back(new Average(name));
+		}
+		else {
+			students.push_back(new Bad(name));
+		}
+	}
+	return students;
 }
