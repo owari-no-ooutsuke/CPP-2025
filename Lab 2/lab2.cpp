@@ -3,12 +3,14 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <iomanip>
 #define P_CORRECT 60 //вероятность правильного решения среднего студента (в процентах)
-#define N 10 //количество студентов
+#define N 15 //количество студентов
 
 using std::string;
 using std::vector;
 using std::ifstream;
+using std::cout;
 
 //квадратное уравнение ax^2 + bx + c
 class Equation {
@@ -18,7 +20,7 @@ public:
 };
 
 /* проверка корректности уравнения
-* 
+*
 * возвращает false, если все коэффициенты уравнения нулевые, и true во всех остальных случаях
 */
 bool Equation::isValid() {
@@ -117,7 +119,7 @@ public:
 };
 
 /* решение уравнений из файла средним студентом
-* 
+*
 * с вероятностью P_CORRECT (в процентах) решает правильно, в остальных случаях записывает
 * один корень, равный 0
 */
@@ -151,8 +153,8 @@ public:
 	Answer Solve(string taskFilename); //решение квадратных уравнений из файла
 };
 
-/* решение уравнений из файла плохим студентом 
-* 
+/* решение уравнений из файла плохим студентом
+*
 * всегда один корень, равный 0
 */
 Answer Bad::Solve(string taskFilename) {
@@ -187,8 +189,9 @@ public:
 	void AddToQueue(Answer ans); //добавить работу в очередь
 	void ClearQueue(); //очистить очередь
 	void Check(string taskFilename); //проверка работ, находящихся в очереди
-	void ShowResults(); //вывод результатов проверки
-}; 
+	int EqCount(string taskFilename); //подсчет количества уравнений в задании 
+	void ShowResults(string taskFilename); //вывод результатов проверки
+};
 
 vector<vector<double>> Teacher::Solve(string taskFilename) {
 	vector<vector<double>> answers;
@@ -229,14 +232,45 @@ void Teacher::Check(string taskFilename) {
 	}
 }
 
-void Teacher::ShowResults() {
+int Teacher::EqCount(string taskFilename) {
+	ifstream fin(taskFilename);
+	int count = 0;
+	Equation eq = ReadEq(fin);
+	while (eq.isValid()) {
+		count++;
+		vector<double> sol = EqSolution(eq);
+		eq = ReadEq(fin);
+	}
+	fin.close();
+	return count;
+}
+
+void Teacher::ShowResults(string taskFilename) {
+	int eqCount = EqCount(taskFilename);
+	int nameWidth = 0;
+	int len;
 	for (int i = 0; i < res.size(); i++) {
-		std::cout << res[i].studName << ": " << res[i].correctAnsCount << std::endl;
+		len = res[i].studName.length();
+		if (len > nameWidth) {
+			nameWidth = len;
+		}
+	}
+
+	cout << std::setw(nameWidth) << "Name" << " | Result" << std::endl;
+	for (int i = 0; i < nameWidth + 10; i++) {
+		cout << "-";
+	}
+	for (int i = 0; i < res.size(); i++) {
+		cout << std::endl << std::setw(nameWidth) << res[i].studName << " | ";
+		cout << res[i].correctAnsCount << " / " << eqCount << std::endl;
+		for (int j = 0; j < nameWidth + 10; j++) {
+			cout << "-";
+		}
 	}
 }
 
 /* создание студентов
-* 
+*
 * возвращает массив указателей на базовый класс Student
 */
 vector<Student*> CreateStudents(int count) {
@@ -256,4 +290,20 @@ vector<Student*> CreateStudents(int count) {
 		}
 	}
 	return students;
+}
+
+int main() {
+	string task = "eq_coeffs.txt";
+	Teacher t;
+	vector<Student*> students = CreateStudents(N);
+	for (int i = 0; i < N; i++) {
+		t.AddToQueue((*students[i]).Solve(task));
+	}
+	t.Check(task);
+	t.ShowResults(task);
+
+	for (int i = 0; i < N; i++) {
+		delete students[i];
+	}
+	return 0;
 }
